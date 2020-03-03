@@ -11,7 +11,7 @@ You get some help from the compiler that checks for missing declarations, mismat
 does not care from which file the definition comes. So if you refactor and move and rename a function you might
 end up with incorrect "interface" declarations.
 
-I asked a question on Stack Overflow but got no good answers (the question seems to be hard to unederstand,
+I asked a question on Stack Overflow but got no good answers (the question seems to be hard to understand,
 probably because I'm bad at explaining, or others just don't think like I do about keeping things tidy...).
 
 So this is my own tool to find if a header file contains all the external symbols (for now, functions) from
