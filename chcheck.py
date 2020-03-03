@@ -100,6 +100,7 @@ def compare_header_and_body(module):
         pycparser_lib = reduce(
             os.path.join, [pycparser_path, 'utils', 'fake_libc_include'])
     else:
+        print("Warning: pycparser not found")
         pycparser_lib = None
 
     cpp_args = [  # Add some common GNUisms
@@ -107,9 +108,11 @@ def compare_header_and_body(module):
         r'-D__attribute__(x)=',
         r'-D__extension__=',
         r'-D__restrict=',
-        r'-D__inline=',
-        r'-I'+pycparser_lib if pycparser_lib else r''
+        r'-D__inline='
     ]
+    if not pycparser_lib == None:
+        cpp_args.append('-I'+pycparser_lib)
+
     try:
         definitions_ast = parse_file(
             module+'.c', use_cpp=True, cpp_args=cpp_args)
