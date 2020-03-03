@@ -82,12 +82,23 @@ class FuncDeclVisitor(c_ast.NodeVisitor):
             return node.type.declname
 
 
-def compare_header_and_body(module):
+def compare_header_and_body(args):
     # Note that cpp is used. Provide a path to your own cpp or
     # make sure one exists in PATH.
 
-    pycparser_path = None
+    cpp_args = [  # Add some common GNUisms
+        r'-D__gnuc_va_list(x)=',
+        r'-D__attribute__(x)=',
+        r'-D__extension__=',
+        r'-D__restrict=',
+        r'-D__inline='
+    ]
+    if len(args) > 1:
+        # Append all command line arguments except the last
+        cpp_args.extend(args[:-1])
+
     # Try to find a fake_libc
+    pycparser_path = None
     if os.path.isdir('pycparser'):
         # In current directory
         pycparser_path = r'./pycparser'
@@ -100,19 +111,13 @@ def compare_header_and_body(module):
         pycparser_lib = reduce(
             os.path.join, [pycparser_path, 'utils', 'fake_libc_include'])
     else:
-        print("Warning: pycparser not found")
         pycparser_lib = None
 
-    cpp_args = [  # Add some common GNUisms
-        r'-D__gnuc_va_list(x)=',
-        r'-D__attribute__(x)=',
-        r'-D__extension__=',
-        r'-D__restrict=',
-        r'-D__inline='
-    ]
     if not pycparser_lib == None:
         cpp_args.append('-I'+pycparser_lib)
 
+    # Module name should be last argument
+    module = args[-1]
     try:
         definitions_ast = parse_file(
             module+'.c', use_cpp=True, cpp_args=cpp_args)
@@ -181,14 +186,16 @@ Usage:
 
 
 if __name__ == "__main__":
-    if not len(sys.argv) == 2:
+    if not len(sys.argv) > 1:
         usage()
         exit(-1)
 
-    possible_extension = sys.argv[1][-2:]
+    # Is the last argument a .c or .h filename? Should be a module name
+    possible_extension = sys.argv[-1][-2:]
     if possible_extension == '.c' or possible_extension == '.h':
         usage()
         exit(-1)
 
-    error_code = compare_header_and_body(sys.argv[1])
+    # Send all arguments to the main function except the first
+    error_code = compare_header_and_body(sys.argv[1:])
     exit(error_code)
