@@ -82,7 +82,7 @@ class FuncDeclVisitor(c_ast.NodeVisitor):
             return node.type.declname
 
 
-def show_func_defs(module):
+def compare_header_and_body(module):
     # Note that cpp is used. Provide a path to your own cpp or
     # make sure one exists in PATH.
 
@@ -141,7 +141,8 @@ def show_func_defs(module):
         print("Declarations that have no definition in {}".format(module+'.c:'))
         print(*without_declaration, sep='\n')
     if len(without_declaration) == 0 and len(without_definition) == 0:
-        print(".c and .h matches")
+        return 0
+    return -1
 
 
 def usage():
@@ -178,8 +179,11 @@ if __name__ == "__main__":
     if not len(sys.argv) == 2:
         usage()
         exit(-1)
+
     possible_extension = sys.argv[1][-2:]
     if possible_extension == '.c' or possible_extension == '.h':
         usage()
         exit(-1)
-    show_func_defs(sys.argv[1])
+
+    error_code = compare_header_and_body(sys.argv[1])
+    exit(error_code)
