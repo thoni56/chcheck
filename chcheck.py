@@ -132,13 +132,14 @@ def compare_header_and_body(module):
     without_definition = [
         "  "+symbol for symbol in c_visitor.symbols if symbol not in h_visitor.symbols]
     if len(without_definition) > 0:
-        print("Definitions that are not in the {}".format(module+'.h:'))
+        print("Definitions in '{}.c' that are not in '{}.h':".format(module, module))
         print(*without_definition, sep='\n')
         print()
     without_declaration = [
         "  "+symbol for symbol in h_visitor.symbols if symbol not in c_visitor.symbols]
     if len(without_declaration) > 0:
-        print("Declarations that have no definition in {}".format(module+'.c:'))
+        print("Declarations in '{}.h' that have no externally visible definition in '{}.c':".format(
+            module, module))
         print(*without_declaration, sep='\n')
     if len(without_declaration) == 0 and len(without_definition) == 0:
         return 0
