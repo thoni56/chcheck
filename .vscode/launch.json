@@ -13,6 +13,28 @@
             "args": [
                 "test/module"
             ]
+        },
+        {
+            "name": "chcheck -I../pycparser test/module",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/chcheck.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-I../pycparser",
+                "test/module"
+            ]
+        },
+        {
+            "name": "chcheck from another directory",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/chcheck.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/test",
+            "args": [
+                "module"
+            ]
         }
     ]
 }
