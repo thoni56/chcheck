@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "../c-xrefactory/src/options.h"
+                "../c-xrefactory/src/options"
             ]
         }
     ]
