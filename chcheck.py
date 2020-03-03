@@ -196,6 +196,12 @@ if __name__ == "__main__":
         usage()
         exit(-1)
 
+    module = sys.argv[-1]
+    # Check that both <module>.h and <module>.c exists
+    if not os.path.exists(module+'.c') or not os.path.exists(module+'.h'):
+        print("ERROR: both '{}.c' and '{}.h' must exist".format(module, module))
+        exit(-1)
+
     # Send all arguments to the main function except the first
     error_code = compare_header_and_body(sys.argv[1:])
     exit(error_code)
