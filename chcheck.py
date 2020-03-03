@@ -14,7 +14,7 @@
 #
 # Simplistically adapted from pycparser example: func_defs.py
 #
-# Since it uses pycparser it will only handle C functions and you will
+# Since it uses pycparser it will only handle C and you will
 # probably need the pycparsers "fake_libc_include" to avoid parsing
 # the whole world of libc headers. To use it, make a soft link with
 # the name 'pycparser' in the directory you are running this from, or
@@ -54,22 +54,26 @@ class FuncDefVisitor(c_ast.NodeVisitor):
     def __init__(self, filename):
         self._types = {}
         self.filename = filename
+        self.symbols = []
 
     def visit_FuncDef(self, node):
+        # Only consider definitions that are in the processed file
         if node.coord.file == self.filename:
-            # Only consider definitions that are in the processed file
-            print('%s at %s' % (node.decl.name, node.decl.coord))
+            # Disregard 'static' declared symbols
+            if not 'static' in node.decl.storage:
+                self.symbols.append(node.decl.name)
 
 
 class FuncDeclVisitor(c_ast.NodeVisitor):
     def __init__(self, filename):
         self._types = {}
         self.filename = filename
+        self.symbols = []
 
     def visit_FuncDecl(self, node):
-        # if node.coord.file == self.filename:
         # Only consider declarations that are in the processed file
-        print('%s at %s' % (self.declname(node), node.coord))
+        if node.coord.file == self.filename:
+            self.symbols.append(self.declname(node))
 
     def declname(self, node):
         if isinstance(node.type, c_ast.PtrDecl):
@@ -78,7 +82,7 @@ class FuncDeclVisitor(c_ast.NodeVisitor):
             return node.type.declname
 
 
-def show_func_defs(args):
+def show_func_defs(module):
     # Note that cpp is used. Provide a path to your own cpp or
     # make sure one exists in PATH.
 
@@ -98,30 +102,46 @@ def show_func_defs(args):
     else:
         pycparser_lib = None
 
-    # if pycparser_path:
-    #    print("/* Generated with cgreen-mocker and pycparser's fake_libc from %s */" %
-    #          (pycparser_path))
+    cpp_args = [  # Add some common GNUisms
+        r'-D__gnuc_va_list(x)=',
+        r'-D__attribute__(x)=',
+        r'-D__extension__=',
+        r'-D__restrict=',
+        r'-D__inline=',
+        r'-I'+pycparser_lib if pycparser_lib else r''
+    ]
     try:
-        ast = parse_file(args[-1], use_cpp=True,
-                         cpp_args=[
-                             # Add some common GNUisms
-                             r'-D__gnuc_va_list(x)=',
-                             r'-D__attribute__(x)=',
-                             r'-D__extension__=',
-                             r'-D__restrict=',
-                             r'-D__inline=',
-                             r'-I'+pycparser_lib if pycparser_lib else r''
-        ] +
-            args[0:-1])
+        definitions_ast = parse_file(
+            module+'.c', use_cpp=True, cpp_args=cpp_args)
     except ParseError as e:
-        print("ERROR: {} - C99 parse error".format(e))
-        return
+        print("ERROR processing {}: {} - C99 parse error".format(module+'.c', e))
+        exit(-1)
 
-    if args[0][-1] == 'c':
-        v = FuncDefVisitor(args[0])
-    else:
-        v = FuncDeclVisitor(args[0])
-    v.visit(ast)
+    try:
+        declarations_ast = parse_file(
+            module+'.h', use_cpp=True, cpp_args=cpp_args)
+    except ParseError as e:
+        print("ERROR processing {}: {} - C99 parse error".format(module+'.h', e))
+        exit(-1)
+
+    c_visitor = FuncDefVisitor(module+'.c')
+    c_visitor.visit(definitions_ast)
+    h_visitor = FuncDeclVisitor(module+'.h')
+    h_visitor.visit(declarations_ast)
+
+    without_definition = [
+        "  "+symbol for symbol in c_visitor.symbols if symbol not in h_visitor.symbols]
+    if len(without_definition) > 0:
+        print("Definitions that are not in the {}".format(module+'.h:'))
+        print(*without_definition, sep='\n')
+        print()
+    without_declaration = [
+        "  "+symbol for symbol in h_visitor.symbols if symbol not in c_visitor.symbols]
+    if len(without_declaration) > 0:
+        print("Declarations that have no definition in {}".format(module+'.c:'))
+        print(*without_declaration, sep='\n')
+    if len(without_declaration) == 0 and len(without_definition) == 0:
+        print(".c and .h matches")
 
 
 def usage():
@@ -138,6 +158,10 @@ Usage:
     chcheck checks the declarations in a C header file and checks them
     against the content of the corresponding '.c' file.
 
+    NOTE: you should give the module name, not a filename with '.c' or
+    '.h' extension. It is assumed that both exists and they are
+    checked against each other.
+
     If chcheck encounters parse errors and they look like gnu-isms you
     should get a copy of the source for pycparser (on which
     cgreen-mocker is built). In it you will find a 'fake_libc_include'
@@ -151,7 +175,11 @@ Usage:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) <= 1:
+    if not len(sys.argv) == 2:
         usage()
         exit(-1)
-    show_func_defs(sys.argv[1:])
+    possible_extension = sys.argv[1][-2:]
+    if possible_extension == '.c' or possible_extension == '.h':
+        usage()
+        exit(-1)
+    show_func_defs(sys.argv[1])
