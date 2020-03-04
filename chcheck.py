@@ -20,10 +20,12 @@
 # the name 'pycparser' in the directory you are running this from, or
 # in the directory of 'cgreen-mocker' itself, to the top directory of
 # the pycparser source, and cgreen-mocker will pick it up
-# automatically. Or you can point to it using a command line
-# 'cpp_directive' arg.
+# automatically. Or you can point to the fake_libc directory using a
+# command line 'cpp_directive' arg:
 #
-# This was inspired by my StackOverflow question and the cgreen-mocker
+#    chcheck -I../pycparser/utils/fake_libc_include ...
+#
+# This tool was inspired by my StackOverflow question and the cgreen-mocker
 # in the cgreen project (https://github.com/cgreen-dev/cgreen).
 #
 # Thanks to @gardenia for the pointer to pycparser!
