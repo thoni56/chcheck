@@ -35,6 +35,29 @@
             "args": [
                 "module"
             ]
+        },
+        {
+            "name": "chcheck -v",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/chcheck.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-v",
+                "test/module"
+            ]
+        },
+        {
+            "name": "symlinked chcheck -v",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/test/chcheck",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/test",
+            "args": [
+                "-v",
+                "module"
+            ]
         }
     ]
 }

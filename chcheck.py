@@ -99,19 +99,28 @@ def compare_header_and_body(args):
         # Append all command line arguments except the last
         cpp_args.extend(args[:-1])
 
-    # Try to find a fake_libc
+    # Try to find a fake_libc...
     pycparser_path = None
     if os.path.isdir('pycparser'):
-        # In current directory
+        # Found in current directory
         pycparser_path = r'./pycparser'
-    elif os.path.isdir(os.path.dirname(os.path.join(os.path.abspath(__file__),
-                                                    'pycparser'))):
-        # In the directory of this script
-        pycparser_path = os.path.dirname(os.path.join(os.path.abspath(__file__),
-                                                      'pycparser'))
+    else:
+        this_script = os.path.abspath(__file__)
+        # Look in the directory of this script
+        if os.path.islink(this_script):
+            # If the script is a symlink, resolve it first
+            this_script = os.readlink(this_script)
+        if os.path.isdir(os.path.join(os.path.dirname(this_script),
+                                      'pycparser')):
+            # Yes, there is a pycparser symlink here
+            pycparser_path = os.path.join(os.path.dirname(this_script),
+                                          'pycparser')
     if pycparser_path:
         pycparser_lib = reduce(
             os.path.join, [pycparser_path, 'utils', 'fake_libc_include'])
+        if verbose:
+            print("pycparsers fake_libc automatically found in {}.".format(
+                pycparser_lib))
     else:
         pycparser_lib = None
 
@@ -120,6 +129,9 @@ def compare_header_and_body(args):
 
     # Module name should be last argument
     module = args[-1]
+    if verbose:
+        print("Parsing '{}.[ch]' using 'cpp {}'.".format(
+            module, ' '.join(cpp_args)))
     try:
         definitions_ast = parse_file(
             module+'.c', use_cpp=True, cpp_args=cpp_args)
@@ -145,7 +157,6 @@ def compare_header_and_body(args):
         print("Externally visible definitions in '{}.c' that are not in '{}.h':".format(
             module, module))
         print(*without_definition, sep='\n')
-        print()
     without_declaration = [
         "  "+symbol for symbol in h_visitor.symbols if symbol not in c_visitor.symbols]
     if len(without_declaration) > 0:
@@ -197,6 +208,16 @@ if __name__ == "__main__":
     if possible_extension == '.c' or possible_extension == '.h':
         usage()
         exit(-1)
+
+    # Is any argument '-v' or '--verbose'?
+    if '-v' in sys.argv or '--verbose' in sys.argv:
+        verbose = True
+        if '-v' in sys.argv:
+            sys.argv.remove('-v')
+        if '--verbose' in sys.argv:
+            sys.argv.remove('--verbose')
+    else:
+        verbose = False
 
     module = sys.argv[-1]
     # Check that both <module>.h and <module>.c exists
