@@ -10,7 +10,7 @@
 #
 # <cpp_directive>: any 'cpp' directive but most useful is e.g.
 #                  "-I <directory>" to ensure cpp finds files.
-# <module>       : filename which will be appended ".h" and ".c"
+# <module>       : filename which will be appended with ".h" and ".c"
 #
 # Simplistically adapted from pycparser example: func_defs.py
 #
@@ -33,9 +33,6 @@
 #    https://github.com/eliben/pycparser
 #
 # (C) 2020, Thomas Nilefalk
-#
-# Using pycparser for printing out all the functions defined in a
-# C file.
 #
 # PyCParser - Copyright (C) 2008-2015, Eli Bendersky
 # License: BSD
@@ -154,15 +151,15 @@ def compare_header_and_body(args):
     without_definition = [
         "  "+symbol for symbol in c_visitor.symbols if symbol not in h_visitor.symbols]
     if len(without_definition) > 0:
-        print("Externally visible definitions in '{}.c' that are not in '{}.h':".format(
-            module, module))
-        print(*without_definition, sep='\n')
+        print("{}: Externally visible definitions in '{}.c' that are not in '{}.h':\n+".format(
+            module, module, module), end="")
+        print(*without_definition, sep='\n+')
     without_declaration = [
         "  "+symbol for symbol in h_visitor.symbols if symbol not in c_visitor.symbols]
     if len(without_declaration) > 0:
-        print("Declarations in '{}.h' that have no externally visible definition in '{}.c':".format(
-            module, module))
-        print(*without_declaration, sep='\n')
+        print("{}: Declarations in '{}.h' that have no externally visible definition in '{}.c':\n-".format(
+            module, module, module), end="")
+        print(*without_declaration, sep='\n-')
     if len(without_declaration) == 0 and len(without_definition) == 0:
         return 0
     return -1
